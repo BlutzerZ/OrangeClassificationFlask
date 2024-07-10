@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from tensorflow.keras.models import load_model # type: ignore
 from tensorflow.keras.preprocessing.image import img_to_array, load_img # type: ignore
 import numpy as np
+import tensorflow as tf
 
 # Menyembunyikan pesan log TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -13,7 +14,10 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+tf.config.set_soft_device_placement(True)
+
 model = None
+
 
 def import_model():
     global model

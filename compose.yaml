@@ -7,3 +7,4 @@ services:
         - .:/app/WebPredict
       ports:
         - 8000:8000
+      mem_limit: 500m
