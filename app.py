@@ -16,13 +16,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 tf.config.set_soft_device_placement(True)
 
-model = None
+# Memuat model TFLite
+interpreter = tf.lite.Interpreter(model_path='ai_model/model3.tflite')
+interpreter.allocate_tensors()
 
-
-def import_model():
-    global model
-    if model is None:
-        model = load_model('ai_model/model3.h5')
+# Mendapatkan detail tensor input dan output
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -50,10 +50,16 @@ def predict():
         file.save(file_path)
         
         img_array = preprocess_and_augment_image(file_path)
-        prediction = model.predict(img_array)
-        predicted_class = np.argmax(prediction, axis=1)[0]
+        
+        input_data = np.array(img_array, dtype=np.float32)
+        interpreter.set_tensor(input_details[0]['index'], input_data)
+        
+        interpreter.invoke()
+        
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+        predicted_class = np.argmax(output_data, axis=1)[0]
         class_labels = {0: 'Bad', 1: 'Good', 2: 'Mixed'}
-
+        
         return render_template('predict.html', context={
             'result': class_labels[predicted_class],
             'img': file_path,
@@ -66,8 +72,6 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
-if __name__ == '__main__':
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
-    import_model()
-    app.run(debug=False, host='0.0.0.0', port=8000)
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.run(debug=False, host='0.0.0.0', port=8000)
